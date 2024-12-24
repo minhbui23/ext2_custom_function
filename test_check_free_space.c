@@ -26,6 +26,8 @@ static int __init test_init(void)
     sb = hlist_entry(fs_type->fs_supers.first, struct super_block, s_instances);
     
     printk(KERN_INFO "Free space: %lu\n", ext2_check_free_space(sb));
+
+    module_put(THIS_MODULE);
     
     return 0;
 }

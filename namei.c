@@ -358,6 +358,10 @@ static int ext2_rename (struct mnt_idmap * idmap,
 	struct folio * old_folio;
 	struct ext2_dir_entry_2 * old_de;
 	bool old_is_dir = S_ISDIR(old_inode->i_mode);
+
+	bool is_move = (old_dir != new_dir);
+	const char *action = is_move ? "Moved" : "Renamed";
+
 	int err;
 
 	if (flags & ~RENAME_NOREPLACE)
@@ -375,7 +379,7 @@ static int ext2_rename (struct mnt_idmap * idmap,
 	if (IS_ERR(old_de))
 		return PTR_ERR(old_de);
 
-	if (old_is_dir && old_dir != new_dir) {
+	if (old_is_dir && is_move) {
 		err = -EIO;
 		dir_de = ext2_dotdot(old_inode, &dir_folio);
 		if (!dir_de)
@@ -404,7 +408,8 @@ static int ext2_rename (struct mnt_idmap * idmap,
 		if (old_is_dir)
 			drop_nlink(new_inode);
 		inode_dec_link_count(new_inode);
-	} else {
+	} 
+	else {
 		err = ext2_add_link(new_dentry, old_inode);
 		if (err)
 			goto out_dir;
@@ -426,6 +431,13 @@ static int ext2_rename (struct mnt_idmap * idmap,
 					    new_dir, false);
 
 		inode_dec_link_count(old_dir);
+	}
+
+	if (!err) {
+		printk("%s %s to %s\n", action, old_dentry->d_name.name, new_dentry->d_name.name);
+		ext2_log(old_dentry->d_name.name,
+				old_is_dir ? "folder" : "file",
+				action);
 	}
 out_dir:
 	if (dir_de)
