@@ -20,6 +20,8 @@ ext2-$(CONFIG_EXT2_FS_SECURITY)	 += xattr_security.o
 
 obj-m += test_check_free_space.o
 
+#obj-m += ext2_quota.o
+
 all:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 

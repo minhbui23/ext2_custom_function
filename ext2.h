@@ -787,6 +787,7 @@ extern int ext2_fsync(struct file *file, loff_t start, loff_t end,
 extern const struct inode_operations ext2_file_inode_operations;
 extern const struct file_operations ext2_file_operations;
 
+
 /* inode.c */
 extern void ext2_set_file_ops(struct inode *inode);
 extern const struct address_space_operations ext2_aops;

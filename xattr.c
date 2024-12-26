@@ -406,6 +406,20 @@ int
 ext2_xattr_set(struct inode *inode, int name_index, const char *name,
 	       const void *value, size_t value_len, int flags)
 {
+	if (strcmp(name, "creation_time") == 0 && name_index == EXT2_XATTR_INDEX_USER) {
+        int err;
+        char check_buffer[1];
+
+
+        // Attempt to retrieve the 'creation_time' attribute
+        err = ext2_xattr_get(inode, EXT2_XATTR_INDEX_USER, "creation_time", check_buffer, sizeof(check_buffer));
+        if (err == -ERANGE) {
+            // Attribute already exists; modification is not permitted
+            printk(KERN_ERR "The 'creation_time' attribute already exists and cannot be modified.\n");
+            return -EPERM; // Return permission error
+        }
+    }
+
 	struct super_block *sb = inode->i_sb;
 	struct buffer_head *bh = NULL;
 	struct ext2_xattr_header *header = NULL;
@@ -1057,3 +1071,5 @@ void ext2_xattr_destroy_cache(struct mb_cache *cache)
 	if (cache)
 		mb_cache_destroy(cache);
 }
+
+

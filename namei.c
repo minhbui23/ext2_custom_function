@@ -34,10 +34,12 @@
 
 #include <linux/pagemap.h>
 #include <linux/quotaops.h>
-#include <linux/types.h>
+#include <linux/types.h>	
 #include "ext2.h"
 #include "xattr.h"
 #include "acl.h"
+#include <linux/ktime.h>
+#include <linux/string.h>
 
 static inline int ext2_add_nondir(struct dentry *dentry, struct inode *inode)
 {
@@ -55,6 +57,45 @@ static inline char to_upper(char c) {
     if (c >= 'a' && c <= 'z')
         return c - 32; // Chuyển từ 'a'-'z' sang 'A'-'Z'
     return c;
+}
+
+static inline void set_creation_time(struct inode *inode){
+    int err;
+    struct timespec64 ts;
+    struct tm tm;
+    char time_str[17];
+    const int timezone_offset = 7 * 3600; // UTC + 7
+
+
+    // Get the current time
+    ktime_get_real_ts64(&ts);
+
+
+    // Adjust for UTC+7 timezone
+    ts.tv_sec += timezone_offset;
+
+
+    // Convert time to tm structure
+    time64_to_tm(ts.tv_sec, 0, &tm);
+
+
+    // Format time string as "HH:MM DD/MM/YYYY"
+    snprintf(time_str, sizeof(time_str), "%02d:%02d %02d/%02d/%04d",
+         tm.tm_hour, tm.tm_min, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+
+
+    // Calculate the length of the time string
+    size_t len = strnlen(time_str, sizeof(time_str));
+
+
+    // Set the extended attribute 'creation_time' for the inode
+    err = ext2_xattr_set(inode, EXT2_XATTR_INDEX_USER, "creation_time",
+                         time_str, len + 1, 0);
+
+
+    if (err) {
+        printk(KERN_ERR "Failed to set xattr: %d\n", err);
+    }
 }
 
 
@@ -133,6 +174,7 @@ static int ext2_create (struct mnt_idmap * idmap,
 	
 	ext2_set_file_ops(inode);
 	mark_inode_dirty(inode);
+	set_creation_time(inode);
 	return ext2_add_nondir(dentry, inode);
 }
 
@@ -281,7 +323,7 @@ static int ext2_mkdir(struct mnt_idmap * idmap,
 		goto out_fail;
 
 	d_instantiate_new(dentry, inode);
-
+	set_creation_time(inode);
 	ext2_log(dentry->d_name.name, "folder", "Created");
 out:
 	return err;
