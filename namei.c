@@ -337,7 +337,7 @@ out_dir:
 	goto out;
 }
 
-static int ext2_unlink(struct inode *dir, struct dentry *dentry)
+int ext2_unlink(struct inode *dir, struct dentry *dentry)
 {
 	struct inode *inode = d_inode(dentry);
 	struct ext2_dir_entry_2 *de;
@@ -371,6 +371,8 @@ static int ext2_unlink(struct inode *dir, struct dentry *dentry)
 out:
 	return err;
 }
+
+EXPORT_SYMBOL(ext2_unlink);
 
 static int ext2_rmdir (struct inode * dir, struct dentry *dentry)
 {
